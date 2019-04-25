@@ -1,0 +1,279 @@
+﻿/*********************************/
+-- Problem 1. All Mountain Peaks
+/*********************************/
+/*Part I – SQL Queries
+You are given a MS SQL Server database "Geography" holding continents, 
+countries, currencies, rivers, mountains and peaks, available as SQL script. 
+Your task is to write SQL queries for displaying data from the given database. 
+In all problems, please name the columns exactly like in the sample tables below.
+Problem 1.	All Mountain Peaks
+Display all ad mountain peaks in alphabetical order. Submit for evaluation the result grid with headers.*/
+
+SELECT PeakName FROM Peaks
+ORDER BY PeakName
+
+/***********************************************/
+-- Problem 2.	Biggest Countries by Population
+/***********************************************/
+/*Find the 30 biggest countries by population from Europe. Display the country name and population.
+ Sort the results by population (from biggest to smallest),
+ then by country alphabetically. Submit for evaluation the result grid with headers.
+
+CountryName	Population
+Russia	         140702000
+Germany	          81802257
+France	          64768389
+…	…
+*/
+
+SELECT TOP 30 CountryName, Population FROM Countries
+WHERE ContinentCode = 'EU'
+ORDER BY Population DESC
+
+/********************************************************/
+ -- Problem 3.	Countries and Currency (Euro / Not Euro)
+/********************************************************/
+/*Find all countries along with information about their currency.
+ Display the country code, country name and information about its currency: either "Euro" or "Not Euro".
+ Sort the results by country name alphabetically. Submit for evaluation the result grid with headers.
+CountryName	CountryCode	Currency
+Afghanistan	   AF	        Not Euro
+Åland	           AX	        Euro
+Albania	           AL	        Not Euro */
+
+SELECT CountryName,
+       CountryCode, 
+	   (CASE CurrencyCode WHEN 'EUR' THEN 'Euro' ELSE  'Not Euro' END) AS Currency 
+	   FROM Countries
+ORDER BY CountryName
+
+/*****************************************************/
+-- Problem 4.	Countries Holding 'A' 3 or More Times
+/*****************************************************/
+/*Find all countries that holds the letter 'A' in their name at least 3 times (case insensitively),
+ sorted by ISO code.Display the country name and ISO code.
+ Submit for evaluation the result grid with headers.
+
+Country Name	ISO Code
+Afghanistan	AFG
+Albania  	ALB */
+
+SELECT CountryName AS [Country Name] ,
+           IsoCode AS [ISO Code] FROM Countries
+WHERE CountryName LIKE  '%a%A%a%'
+ORDER BY IsoCode
+
+/*************************************/
+--Problem 5.	Peaks and Mountains
+/*************************************/
+/*Find all peaks along with their mountain sorted by elevation (from the highest to the lowest), 
+then by peak name alphabetically. Display the peak name, mountain range name and elevation. 
+Submit for evaluation the result grid with headers.
+
+PeakName	Mountain	Elevation
+Everest	        Himalayas	  8848
+K2	        Karakoram         8611
+Kangchenjunga	Himalayas	  8586*/
+
+
+SELECT e.PeakName, m.MountainRange AS Mountain, e.Elevation FROM Peaks AS e
+INNER JOIN Mountains m
+ON m.Id = e.MountainId
+ORDER BY Elevation DESC
+/****************************************************************/
+--Problem 6.	Peaks with Their Mountain, Country and Continent
+/***************************************************************/
+/*Find all peaks along with their mountain, country and continent. When a mountain belongs to multiple countries, display them all. 
+Sort the results by peak name alphabetically, then by country name alphabetically. 
+Submit for evaluation the result grid with headers.
+
+PeakName	Mountain	CountryName	ContinentName
+Aconcagua	Andes	       Argentina	South America
+Aconcagua	Andes	         Chile	        South America
+Banski Suhodol	Pirin	        Bulgaria	Europe
+*/
+
+SELECT  p.PeakName, 
+       m.MountainRange AS Mountain, 	 
+	   c.CountryName , 
+	   con.ContinentName 
+	       FROM Peaks p	   
+JOIN Mountains m
+ON  m.Id = p.MountainId
+JOIN MountainsCountries mc
+ON  mc.MountainId = m.Id
+JOIN Countries c
+ON  p.MountainId = mc.MountainId
+JOIN Continents con
+ON  c.CountryCode = con.ContinentCode
+ORDER BY  p.PeakName, c.CountryName 
+
+/************************************************************/
+ --Problem 7.	* Rivers Passing through 3 or More Countries
+ /***********************************************************/
+
+/* Find all rivers that pass through to 3 or more countries. Display the river name and the number of countries. 
+Sort the results by river name. Submit for evaluation the result grid with headers.
+River	Countries Count
+Amazon	        7
+Amur	        3
+Brahmaputra	5 */
+
+SELECT RiverName as River, COUNT (c.CountryCode) AS 'Countries Count' FROM Rivers r
+JOIN CountriesRivers co
+ON  r.Id = co.RiverId
+JOIN Countries c
+ON co.CountryCode = c.CountryCode
+GROUP BY RiverName
+HAVING COUNT (c.CountryCode) >= 3
+ORDER BY RiverName
+
+/************************************************************/
+--Problem 8.	Highest, Lowest and Average Peak Elevation
+/************************************************************/
+/*Find the highest, lowest and average peak elevation. Submit for evaluation the result grid with headers.
+
+MaxElevation	MinElevation	AverageElevation
+88…	             20…	     48…
+
+*/ 
+
+SELECT  MAX (Elevation) AS 'MaxElevation',
+		MIN (Elevation) AS 'MinElevation', 
+        AVG (Elevation)  AS 'AverageElevation' 
+		FROM Peaks
+
+/******************************************/
+--	Problem 9.	Rivers by Country
+/*****************************************/
+/* For each country in the database, display the number of rivers passing through that country and the total length of these rivers.
+ When a country does not have any river, display 0 as rivers count and as total length.
+ Sort the results by rivers count (from largest to smallest),
+ then by total length (from largest to smallest), then by country alphabetically.
+ Submit for evaluation the result grid with headers.
+
+CountryName	ContinentName	RiversCount	TotalLength
+China	            Asia	       8	  35156
+Russia	           Europe	       6	  26427
+*/
+
+
+SELECT          c.CountryName,
+             co.ContinentName, 
+     COUNT(r.RiverName) AS RiversCount,  
+    ISNULL(SUM(r.Length), 0) AS TotalLength 
+	            FROM  Countries c
+LEFT JOIN CountriesRivers cr
+ ON  c.CountryCode = cr.CountryCode 
+LEFT JOIN Rivers r
+ ON  r.Id = cr.RiverId
+LEFT JOIN Continents co
+ ON  co.ContinentCode = c.ContinentCode 
+GROUP BY  c.CountryName, co.ContinentName 
+ORDER BY RiversCount DESC, TotalLength DESC, CountryName
+
+/**************************************************/
+--Problem 11.	* Population and Area by Continent
+/**************************************************/
+/*
+For each continent, display the total area and total population of all its countries. 
+Sort the results by population from highest to lowest.
+ Submit for evaluation the result grid with headers.
+
+ContinentName	CountriesArea	CountriesPopulation
+  Asia	        31603228	4130318467
+ Africa	        30360296	1015470588
+*/
+
+SELECT ct.ContinentName,          
+        SUM(c.AreaInSqKm) AS  CountriesArea,
+        SUM(CAST(c.Population as bigint)) AS CountriesPopulation       
+FROM  Continents ct
+JOIN  Countries c
+ON ct.ContinentCode = c.ContinentCode
+GROUP BY ct.ContinentName
+ORDER BY CountriesPopulation DESC
+
+/**************************************************/
+-- Problem 15.	Monasteries by Country
+/**************************************************/
+
+/*
+1.	Create a table Monasteries(Id, Name, CountryCode). Use auto-increment for the primary key. Create a foreign key between the tables Monasteries and Countries.
+2.	Execute the following SQL script (it should pass without any errors):
+INSERT INTO Monasteries(Name, CountryCode) VALUES
+('Rila Monastery “St. Ivan of Rila”', 'BG'), 
+('Bachkovo Monastery “Virgin Mary”', 'BG'),
+('Troyan Monastery “Holy Mother''s Assumption”', 'BG'),
+('Kopan Monastery', 'NP'),
+('Thrangu Tashi Yangtse Monastery', 'NP'),
+('Shechen Tennyi Dargyeling Monastery', 'NP'),
+('Benchen Monastery', 'NP'),
+('Southern Shaolin Monastery', 'CN'),
+('Dabei Monastery', 'CN'),
+('Wa Sau Toi', 'CN'),
+('Lhunshigyia Monastery', 'CN'),
+('Rakya Monastery', 'CN'),
+('Monasteries of Meteora', 'GR'),
+('The Holy Monastery of Stavronikita', 'GR'),
+('Taung Kalat Monastery', 'MM'),
+('Pa-Auk Forest Monastery', 'MM'),
+('Taktsang Palphug Monastery', 'BT'),
+('Sümela Monastery', 'TR')
+3.	Write a SQL command to add a new Boolean column IsDeleted in the Countries table (defaults to false). 
+        Note that there is no "Boolean" type in SQL server, so you should use an alternative.
+4.	Write and execute a SQL command to mark as deleted all countries that have more than 3 rivers.
+5.	Write a query to display all monasteries along with their countries sorted by monastery name.
+        Skip all deleted countries and their monasteries. Submit for evaluation the result grid with headers.
+
+Monastery	                        Country
+Bachkovo Monastery “Virgin Mary”	Bulgaria
+Benchen Monastery	                Nepal
+Kopan Monastery	                         Nepal
+
+*/
+
+
+
+NSERT INTO Monasteries(Name, CountryCode) VALUES
+('Rila Monastery “St. Ivan of Rila”', 'BG'), 
+('Bachkovo Monastery “Virgin Mary”', 'BG'),
+('Troyan Monastery “Holy Mother''s Assumption”', 'BG'),
+('Kopan Monastery', 'NP'),
+('Thrangu Tashi Yangtse Monastery', 'NP'),
+('Shechen Tennyi Dargyeling Monastery', 'NP'),
+('Benchen Monastery', 'NP'),
+('Southern Shaolin Monastery', 'CN'),
+('Dabei Monastery', 'CN'),
+('Wa Sau Toi', 'CN'),
+('Lhunshigyia Monastery', 'CN'),
+('Rakya Monastery', 'CN'),
+('Monasteries of Meteora', 'GR'),
+('The Holy Monastery of Stavronikita', 'GR'),
+('Taung Kalat Monastery', 'MM'),
+('Pa-Auk Forest Monastery', 'MM'),
+('Taktsang Palphug Monastery', 'BT'),
+('Sümela Monastery', 'TR')
+
+alter table Countries
+add IsDeleted bit NOT NULL
+Default  0 
+
+ UPDATE Countries 
+ set IsDeleted = 0
+ Where CountryCode in ( 
+        SELECT c.CountryCode from Countries c
+		JOIN CountriesRivers cr
+		on cr.CountryCode = c.CountryCode
+		JOIN Rivers r
+		on cr.RiverId = r.Id
+       	        group by c.CountryCode
+		having COUNT(r.Id) > 3 
+ ) 
+SELECT m.Name AS Monastery, 
+c.CountryName AS Country 
+FROM Monasteries m
+JOIN Countries c
+ON m.CountryCode = c.CountryCode
+Where IsDeleted=1
+ORDER BY m.Name
